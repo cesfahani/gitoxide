@@ -154,6 +154,7 @@ impl PrepareFetch {
                 message: reflog_message.clone(),
             })
             .with_shallow(self.shallow.clone())
+            .with_filter(self.filter.clone())
             .receive_inner(progress, should_interrupt)
             .await?;
 

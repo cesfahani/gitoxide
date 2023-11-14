@@ -31,6 +31,13 @@ impl Remote {
         http::ProxyAuthMethod::new_proxy_auth_method("proxyAuthMethod", &config::Tree::REMOTE)
             .with_subsection_requirement(NAME_PARAMETER)
             .with_deviation("implemented like git, but never actually tried");
+    /// The `remote.<name>.promisor` key
+    pub const PROMISOR: keys::Boolean =
+        keys::Boolean::new_boolean("promisor", &config::Tree::REMOTE).with_subsection_requirement(NAME_PARAMETER);
+    /// The `remote.<name>.filter` key
+    pub const PARTIAL_CLONE_FILTER: keys::PartialCloneFilter =
+        keys::PartialCloneFilter::new_partial_clone_filter("partialclonefilter", &config::Tree::REMOTE)
+            .with_subsection_requirement(NAME_PARAMETER);
 }
 
 impl Section for Remote {
@@ -48,6 +55,8 @@ impl Section for Remote {
             &Self::PUSH,
             &Self::PROXY,
             &Self::PROXY_AUTH_METHOD,
+            &Self::PROMISOR,
+            &Self::PARTIAL_CLONE_FILTER,
         ]
     }
 }

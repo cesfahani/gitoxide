@@ -36,6 +36,8 @@ pub struct PrepareFetch {
     /// How to handle shallow clones
     #[cfg_attr(not(feature = "blocking-network-client"), allow(dead_code))]
     shallow: remote::fetch::Shallow,
+    /// Partial clone filter
+    filter: remote::fetch::Filter,
 }
 
 /// The error returned by [`PrepareFetch::new()`].
@@ -134,6 +136,7 @@ impl PrepareFetch {
             #[cfg(any(feature = "async-network-client", feature = "blocking-network-client"))]
             configure_connection: None,
             shallow: remote::fetch::Shallow::NoChange,
+            filter: Default::default(),
         })
     }
 }

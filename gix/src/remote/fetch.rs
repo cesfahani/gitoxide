@@ -108,6 +108,31 @@ impl Shallow {
     }
 }
 
+/// Blob fetch filter description (for partial clones).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BlobFilter {
+    /// Filter all blobs
+    None,
+    /// Filter blobs larger than a certain size
+    Limit {
+        /// Size in bytes
+        size: u64,
+    },
+}
+
+/// Fetch filter description (for partial clones).
+///
+/// Currently only blob filters are supported.
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+pub enum Filter {
+    /// No filtering
+    #[default]
+    None,
+    /// Blob filtering
+    Blob(BlobFilter),
+}
+
+
 /// Information about the relationship between our refspecs, and remote references with their local counterparts.
 #[derive(Default, Debug, Clone)]
 #[cfg(any(feature = "blocking-network-client", feature = "async-network-client"))]

@@ -375,9 +375,9 @@ pub mod fetch {
 
 #[cfg(feature = "gitoxide-core-blocking-client")]
 pub mod clone {
-    use std::{ffi::OsString, num::NonZeroU32, path::PathBuf};
+    use std::{ffi::OsString, num::{NonZeroU32, NonZeroU64}, path::PathBuf};
 
-    use gix::remote::fetch::Shallow;
+    use gix::remote::fetch::{Shallow, Filter, BlobFilter};
 
     #[derive(Debug, clap::Parser)]
     pub struct Platform {
@@ -395,6 +395,9 @@ pub mod clone {
 
         #[clap(flatten)]
         pub shallow: ShallowOptions,
+
+        #[clap(flatten)]
+        pub filter: FilterOptions,
 
         /// The url of the remote to connect to, like `https://github.com/byron/gitoxide`.
         pub remote: OsString,
@@ -431,6 +434,35 @@ pub mod clone {
                 Shallow::Since { cutoff }
             } else {
                 Shallow::default()
+            }
+        }
+    }
+
+    #[derive(Debug, clap::Parser)]
+    pub struct FilterOptions {
+        /// Create a partial clone with all blobs filtered
+        #[clap(long, help_heading = Some("FILTER"), conflicts_with_all = ["blob_limit"])]
+        pub blobless: bool,
+
+        /// Create a partial clone with blobs that exceed specified size filtered
+        #[clap(long, help_heading = Some("FILTER"))]
+        pub blob_limit: Option<NonZeroU64>,
+    }
+
+    impl From<FilterOptions> for Filter {
+        fn from(opts: FilterOptions) -> Self {
+            if opts.blobless {
+                Filter::Blob(BlobFilter::None)
+            }
+            else if let Some(size) = opts.blob_limit {
+                Filter::Blob(
+                    BlobFilter::Limit{
+                        size: size.into()
+                    }
+                )
+            }
+            else {
+                Filter::None
             }
         }
     }

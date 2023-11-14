@@ -195,6 +195,9 @@ pub type PushRefSpec = Any<validate::PushRefSpec>;
 /// A key that represents a `RefSpec` for fetching.
 pub type FetchRefSpec = Any<validate::FetchRefSpec>;
 
+/// A key that represents a partial clone filter for fetching.
+pub type PartialCloneFilter = Any<validate::PartialCloneFilter>;
+
 mod duration {
     use std::time::Duration;
 
@@ -274,6 +277,13 @@ mod refspecs {
         pub const fn new_fetch_refspec(name: &'static str, section: &'static dyn Section) -> Self {
             Self::new_with_validate(name, section, validate::FetchRefSpec)
         }
+    }
+}
+
+impl PartialCloneFilter {
+    /// Create a new instance.
+    pub const fn new_partial_clone_filter(name: &'static str, section: &'static dyn Section) -> Self {
+        Self::new_with_validate(name, section, validate::PartialCloneFilter)
     }
 }
 
@@ -593,6 +603,15 @@ pub mod validate {
     impl Validate for FetchRefSpec {
         fn validate(&self, value: &BStr) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
             gix_refspec::parse(value, gix_refspec::parse::Operation::Fetch)?;
+            Ok(())
+        }
+    }
+
+    /// Values that parse as PartialCloneFilter for fetching.
+    pub struct PartialCloneFilter;
+    impl Validate for PartialCloneFilter {
+        fn validate(&self, _value: &BStr) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+            // TODO
             Ok(())
         }
     }

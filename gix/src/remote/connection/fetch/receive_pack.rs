@@ -14,7 +14,7 @@ use crate::{
         cache::util::ApplyLeniency,
         tree::{Clone, Fetch, Key},
     },
-    remote,
+    remote::{self, fetch::{Filter, BlobFilter}},
     remote::{
         connection::fetch::config,
         fetch,
@@ -117,6 +117,22 @@ where
             arguments.use_include_tag();
         }
         let (shallow_commits, mut shallow_lock) = add_shallow_args(&mut arguments, &self.shallow, repo)?;
+
+        match &self.filter {
+            Filter::None => {},
+            Filter::Blob(b) => {
+                match b {
+                    BlobFilter::None => {
+                        arguments.filter("blob:none");
+                    },
+                    BlobFilter::Limit {
+                        size,
+                    } => {
+                        arguments.filter(&format!("blob:limit={}", size));
+                    },
+                }
+            },
+        }
 
         if self.ref_map.object_hash != repo.object_hash() {
             return Err(Error::IncompatibleObjectHash {

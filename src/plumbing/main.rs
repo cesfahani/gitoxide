@@ -357,6 +357,7 @@ pub fn main() -> Result<()> {
             no_tags,
             remote,
             shallow,
+            filter,
             directory,
         }) => {
             let opts = core::repository::clone::Options {
@@ -365,6 +366,7 @@ pub fn main() -> Result<()> {
                 handshake_info,
                 no_tags,
                 shallow: shallow.into(),
+                filter: filter.into(),
             };
             prepare_and_run(
                 "clone",

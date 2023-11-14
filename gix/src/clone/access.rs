@@ -42,6 +42,12 @@ impl PrepareFetch {
         self.config_overrides = values.into_iter().map(Into::into).collect();
         self
     }
+
+    /// Make this clone a filtered one with the respective choice of filter.
+    pub fn with_filter(mut self, filter: crate::remote::fetch::Filter) -> Self {
+        self.filter = filter;
+        self
+    }
 }
 
 /// Consumption

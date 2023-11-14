@@ -193,6 +193,7 @@ where
             reflog_message: None,
             write_packed_refs: WritePackedRefs::Never,
             shallow: Default::default(),
+            filter: Default::default(),
         })
     }
 }
@@ -224,6 +225,7 @@ where
     reflog_message: Option<RefLogMessage>,
     write_packed_refs: WritePackedRefs,
     shallow: remote::fetch::Shallow,
+    filter: remote::fetch::Filter,
 }
 
 /// Builder
@@ -263,6 +265,12 @@ where
     /// *Has no effect if the current repository is not as shallow clone.*
     pub fn with_shallow(mut self, shallow: remote::fetch::Shallow) -> Self {
         self.shallow = shallow;
+        self
+    }
+
+    /// Set the remote's partial clone filter.
+    pub fn with_filter(mut self, filter: remote::fetch::Filter) -> Self {
+        self.filter = filter;
         self
     }
 }
