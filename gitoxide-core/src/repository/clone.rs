@@ -80,10 +80,14 @@ pub(crate) mod function {
             .with_filter(filter)
             .fetch_then_checkout(&mut progress, &gix::interrupt::IS_INTERRUPTED)?;
 
+        //println!("Done with fetch_then_checkout!");
+
         let (repo, outcome) = if bare {
             (checkout.persist(), None)
         } else {
+            //println!("Checking out main worktree...");
             let (repo, outcome) = checkout.main_worktree(progress, &gix::interrupt::IS_INTERRUPTED)?;
+            //println!("Checked out main wokrtree!");
             (repo, Some(outcome))
         };
 

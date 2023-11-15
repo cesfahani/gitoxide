@@ -109,7 +109,7 @@ impl Shallow {
 }
 
 /// Blob fetch filter description (for partial clones).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BlobFilter {
     /// Filter all blobs
     None,
@@ -123,7 +123,7 @@ pub enum BlobFilter {
 /// Fetch filter description (for partial clones).
 ///
 /// Currently only blob filters are supported.
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Filter {
     /// No filtering
     #[default]

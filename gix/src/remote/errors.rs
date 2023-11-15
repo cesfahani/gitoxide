@@ -22,6 +22,16 @@ pub mod find {
             remote_name: BString,
             source: config::url::Error,
         },
+        #[error("The value of `remote.{remote_name}.partialclonefilter` was invalid")]
+        PartialCloneFilter {
+            remote_name: BString,
+            source: config::partialclonefilter::Error,
+        },
+        #[error("The value of `remote.{remote_name}.promisor` was invalid")]
+        Promisor {
+            remote_name: BString,
+            source: config::boolean::Error,
+        },
         #[error(transparent)]
         Init(#[from] remote::init::Error),
     }

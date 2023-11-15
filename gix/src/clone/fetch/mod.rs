@@ -102,7 +102,8 @@ impl PrepareFetch {
                 Some(format!("+refs/heads/*:refs/remotes/{remote_name}/*").as_str()),
                 remote::Direction::Fetch,
             )
-            .expect("valid static spec");
+            .expect("valid static spec")
+            .with_filter(self.filter);
         let mut clone_fetch_tags = None;
         if let Some(f) = self.configure_remote.as_mut() {
             remote = f(remote).map_err(Error::RemoteConfiguration)?;

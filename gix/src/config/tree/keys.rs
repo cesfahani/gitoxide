@@ -285,6 +285,37 @@ impl PartialCloneFilter {
     pub const fn new_partial_clone_filter(name: &'static str, section: &'static dyn Section) -> Self {
         Self::new_with_validate(name, section, validate::PartialCloneFilter)
     }
+
+    /// Try to parse `value` as PartialCloneFilter.
+    pub fn try_into_partial_clone_filter(
+        &'static self,
+        value: Cow<'_, BStr>
+    ) -> Result<crate::remote::fetch::Filter, config::partialclonefilter::Error> {
+        let filter = value.to_string();
+        if !filter.starts_with("blob:") {
+            Err(config::partialclonefilter::Error::from_value(self, value.into_owned()))?
+        }
+        let blob_filter = match filter.as_str() {
+            "blob:none" => Ok::<crate::remote::fetch::BlobFilter, config::partialclonefilter::Error>(crate::remote::fetch::BlobFilter::None),
+            _ => {
+                let mut parts = filter.split('=');
+                let filter = parts.next().expect("we know it starts with blob:");
+                let value = parts.next().expect("we know it starts with blob:limit=");
+                if filter != "blob:limit" {
+                    Err(config::partialclonefilter::Error::from_value(self, value.into()))?
+                }
+                let value = value.parse::<u64>()
+                    .map_err(|_| config::partialclonefilter::Error::from_value(
+                        self,
+                        value.into()
+                    ))?;
+                Ok(crate::remote::fetch::BlobFilter::Limit {
+                    size: value
+                })
+            }
+        }?;
+        Ok(crate::remote::fetch::Filter::Blob(blob_filter))
+    }
 }
 
 mod url {

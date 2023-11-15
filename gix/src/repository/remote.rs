@@ -185,6 +185,59 @@ impl crate::Repository {
             None => Default::default(),
         };
 
+        let partial_clone_filter = config
+            .string_filter("remote", Some(name_or_url), "partialclonefilter", &mut filter)
+            .map(|value| {
+                config::tree::Remote::PARTIAL_CLONE_FILTER
+                    .try_into_partial_clone_filter(value)
+                    .map_err(|err| find::Error::PartialCloneFilter {
+                        remote_name: name_or_url.into(),
+                        source: err,
+                    })
+            });
+        let partial_clone_filter = match partial_clone_filter {
+            Some(Ok(f)) => {
+                // let filter_str = match f {
+                //     remote::fetch::Filter::None => "none".to_owned(),
+                //     remote::fetch::Filter::Blob(bf) => {
+                //         match bf {
+                //             remote::fetch::BlobFilter::None => "blob:none".to_owned(),
+                //             remote::fetch::BlobFilter::Limit{ size } => {
+                //                 format!("blob:limit={}", size)
+                //             },
+                //         }
+                //     }
+                // };
+                //println!("Found partialclonefilter: {}", filter_str);
+                f
+            }
+            Some(Err(err)) => {
+                //println!("Error encountered while parsing partialclonefilter: {}", err);
+                return Some(Err(err));
+            }
+            None => {
+                //println!("Found no partialclonefilter... defaulting.");
+                Default::default()
+            },
+        };
+
+        let promisor = config
+            .boolean_filter("remote", Some(name_or_url), "promisor", &mut filter)
+            .map(|value| {
+                config::tree::Remote::PROMISOR
+                    .enrich_error(value)
+                    .map_err(|err| find::Error::Promisor {
+                        remote_name: name_or_url.into(),
+                        source: err,
+                    })
+            });
+        let promisor = match promisor {
+            Some(Ok(v)) => v,
+            Some(Err(err)) => return Some(Err(err)),
+            None => Default::default(),
+        };
+        //println!("Found promisor: {}", if promisor { "true" } else { "false"});
+
         match (url, fetch_specs, push_url, push_specs) {
             (None, None, None, None) => None,
             (None, _, None, _) => Some(Err(find::Error::UrlMissing)),
@@ -219,6 +272,8 @@ impl crate::Repository {
                         push_specs,
                         rewrite_urls,
                         fetch_tags,
+                        partial_clone_filter,
+                        promisor,
                         self,
                     )
                     .map_err(Into::into),

@@ -186,6 +186,8 @@ where
             return Err(prepare::Error::MissingRefSpecs);
         }
         let ref_map = self.ref_map_inner(progress, options).await?;
+        let filter = self.remote.filter;
+        //println!("Prepared fetch with filter: {filter:?}");
         Ok(Prepare {
             con: Some(self),
             ref_map,
@@ -193,7 +195,7 @@ where
             reflog_message: None,
             write_packed_refs: WritePackedRefs::Never,
             shallow: Default::default(),
-            filter: Default::default(),
+            filter,
         })
     }
 }

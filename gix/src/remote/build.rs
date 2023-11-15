@@ -84,4 +84,10 @@ impl Remote<'_> {
         }
         Ok(self)
     }
+
+    /// Add `filter` as partial clone filter.
+    pub fn with_filter(mut self, filter: remote::fetch::Filter) -> Self {
+        self.filter = filter;
+        self
+    }
 }

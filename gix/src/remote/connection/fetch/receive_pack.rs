@@ -163,14 +163,36 @@ where
             r
         };
         let mut graph = graph_repo.revision_graph();
-        let action = negotiate::mark_complete_and_common_ref(
-            &graph_repo,
-            negotiator.deref_mut(),
-            &mut graph,
-            &self.ref_map,
-            &self.shallow,
-            negotiate::make_refmapping_ignore_predicate(con.remote.fetch_tags, &self.ref_map),
-        )?;
+        let action = match &self.filter {
+            Filter::None => {
+                negotiate::mark_complete_and_common_ref(
+                    &graph_repo,
+                    negotiator.deref_mut(),
+                    &mut graph,
+                    &self.ref_map,
+                    &self.shallow,
+                    negotiate::make_refmapping_ignore_predicate(con.remote.fetch_tags, &self.ref_map),
+                )?
+            },
+            Filter::Blob(_) => {
+                negotiate::Action::MustNegotiate {
+                    remote_ref_target_known: [false].to_vec(),
+                }
+            },
+        };
+        // match &action {
+        //     negotiate::Action::MustNegotiate {
+        //         remote_ref_target_known,
+        //     } => {
+        //         println!("action: MustNegotiate: remote_ref_target_known: {:?}", remote_ref_target_known);
+        //     }
+        //     negotiate::Action::SkipToRefUpdate => {
+        //         println!("action: SkipToRefUpdate");
+        //     }
+        //     negotiate::Action::NoChange => {
+        //         println!("action: NoChange");
+        //     }
+        // }
         let mut previous_response = None::<gix_protocol::fetch::Response>;
         let (mut write_pack_bundle, negotiate) = match &action {
             negotiate::Action::NoChange | negotiate::Action::SkipToRefUpdate => {

@@ -215,6 +215,10 @@ pub struct Remote<'repo> {
     pub(crate) push_specs: Vec<gix_refspec::RefSpec>,
     /// Tell us what to do with tags when fetched.
     pub(crate) fetch_tags: remote::fetch::Tags,
+    /// The partial clone filter of the remote to use when fetching.
+    pub(crate) filter: remote::fetch::Filter,
+    /// Whether the remote is a promisor.
+    pub(crate) promisor: bool,
     // /// Delete local tracking branches that don't exist on the remote anymore.
     // pub(crate) prune: bool,
     // /// Delete tags that don't exist on the remote anymore, equivalent to pruning the refspec `refs/tags/*:refs/tags/*`.

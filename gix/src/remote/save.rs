@@ -104,6 +104,17 @@ impl Remote<'_> {
         {
             section.push(as_key(key), Some(spec.to_ref().to_bstring().as_ref()));
         }
+        match &self.filter {
+            remote::fetch::Filter::None => {},
+            remote::fetch::Filter::Blob(bf) => {
+                let filter_str = match bf {
+                    remote::fetch::BlobFilter::Limit { size } => format!("blob:limit={}", size),
+                    remote::fetch::BlobFilter::None => "blob:none".into(),
+                };
+                section.push(as_key(config::tree::Remote::PARTIAL_CLONE_FILTER.name), Some(BStr::new(&filter_str)));
+                section.push(as_key(config::tree::Remote::PROMISOR.name), BStr::new("true").into());
+            },
+        }
         Ok(())
     }
 

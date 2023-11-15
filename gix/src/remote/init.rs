@@ -36,6 +36,8 @@ impl<'repo> Remote<'repo> {
         push_specs: Vec<RefSpec>,
         should_rewrite_urls: bool,
         fetch_tags: remote::fetch::Tags,
+        filter: remote::fetch::Filter,
+        promisor: bool,
         repo: &'repo Repository,
     ) -> Result<Self, Error> {
         debug_assert!(
@@ -54,6 +56,8 @@ impl<'repo> Remote<'repo> {
             fetch_specs,
             push_specs,
             fetch_tags,
+            filter,
+            promisor,
             repo,
         })
     }
@@ -91,6 +95,8 @@ impl<'repo> Remote<'repo> {
             fetch_specs: Vec::new(),
             push_specs: Vec::new(),
             fetch_tags: Default::default(),
+            filter: Default::default(),
+            promisor: Default::default(),
             repo,
         })
     }
