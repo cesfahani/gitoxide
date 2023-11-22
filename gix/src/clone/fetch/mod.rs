@@ -98,12 +98,15 @@ impl PrepareFetch {
 
         let mut remote = repo
             .remote_at(self.url.clone())?
+            .with_filter(self.filter);
+        if !repo.is_bare() {
+            remote = remote
             .with_refspecs(
                 Some(format!("+refs/heads/*:refs/remotes/{remote_name}/*").as_str()),
                 remote::Direction::Fetch,
             )
-            .expect("valid static spec")
-            .with_filter(self.filter);
+            .expect("valid static spec");
+        }
         let mut clone_fetch_tags = None;
         if let Some(f) = self.configure_remote.as_mut() {
             remote = f(remote).map_err(Error::RemoteConfiguration)?;
@@ -114,6 +117,15 @@ impl PrepareFetch {
         let config = util::write_remote_to_local_config_file(&mut remote, remote_name.clone())?;
 
         // Now we are free to apply remote configuration we don't want to be written to disk.
+        if repo.is_bare() {
+            remote = remote
+            .with_refspecs(
+                Some(format!("+refs/heads/*:refs/heads/*").as_str()),
+                remote::Direction::Fetch,
+            )
+            .expect("valid static spec");
+        }
+
         if let Some(fetch_tags) = clone_fetch_tags {
             remote = remote.with_fetch_tags(fetch_tags);
         }
