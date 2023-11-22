@@ -180,19 +180,6 @@ where
                 }
             },
         };
-        // match &action {
-        //     negotiate::Action::MustNegotiate {
-        //         remote_ref_target_known,
-        //     } => {
-        //         println!("action: MustNegotiate: remote_ref_target_known: {:?}", remote_ref_target_known);
-        //     }
-        //     negotiate::Action::SkipToRefUpdate => {
-        //         println!("action: SkipToRefUpdate");
-        //     }
-        //     negotiate::Action::NoChange => {
-        //         println!("action: NoChange");
-        //     }
-        // }
         let mut previous_response = None::<gix_protocol::fetch::Response>;
         let (mut write_pack_bundle, negotiate) = match &action {
             negotiate::Action::NoChange | negotiate::Action::SkipToRefUpdate => {

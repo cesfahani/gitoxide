@@ -197,26 +197,12 @@ impl crate::Repository {
             });
         let partial_clone_filter = match partial_clone_filter {
             Some(Ok(f)) => {
-                // let filter_str = match f {
-                //     remote::fetch::Filter::None => "none".to_owned(),
-                //     remote::fetch::Filter::Blob(bf) => {
-                //         match bf {
-                //             remote::fetch::BlobFilter::None => "blob:none".to_owned(),
-                //             remote::fetch::BlobFilter::Limit{ size } => {
-                //                 format!("blob:limit={}", size)
-                //             },
-                //         }
-                //     }
-                // };
-                //println!("Found partialclonefilter: {}", filter_str);
                 f
             }
             Some(Err(err)) => {
-                //println!("Error encountered while parsing partialclonefilter: {}", err);
                 return Some(Err(err));
             }
             None => {
-                //println!("Found no partialclonefilter... defaulting.");
                 Default::default()
             },
         };
@@ -236,7 +222,6 @@ impl crate::Repository {
             Some(Err(err)) => return Some(Err(err)),
             None => Default::default(),
         };
-        //println!("Found promisor: {}", if promisor { "true" } else { "false"});
 
         match (url, fetch_specs, push_url, push_specs) {
             (None, None, None, None) => None,
