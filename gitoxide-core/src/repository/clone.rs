@@ -5,6 +5,7 @@ pub struct Options {
     pub bare: bool,
     pub handshake_info: bool,
     pub no_tags: bool,
+    pub no_checkout: bool,
     pub shallow: gix::remote::fetch::Shallow,
     pub filter: gix::remote::fetch::Filter,
 }
@@ -32,6 +33,7 @@ pub(crate) mod function {
             handshake_info,
             bare,
             no_tags,
+            no_checkout,
             shallow,
             filter,
         }: Options,
@@ -80,7 +82,7 @@ pub(crate) mod function {
             .with_filter(filter)
             .fetch_then_checkout(&mut progress, &gix::interrupt::IS_INTERRUPTED)?;
 
-        let (repo, outcome) = if bare {
+        let (repo, outcome) = if bare || no_checkout {
             (checkout.persist(), None)
         } else {
             let (repo, outcome) = checkout.main_worktree(progress, &gix::interrupt::IS_INTERRUPTED)?;

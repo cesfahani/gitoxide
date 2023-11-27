@@ -355,6 +355,7 @@ pub fn main() -> Result<()> {
             handshake_info,
             bare,
             no_tags,
+            no_checkout,
             remote,
             shallow,
             filter,
@@ -365,6 +366,7 @@ pub fn main() -> Result<()> {
                 bare,
                 handshake_info,
                 no_tags,
+                no_checkout,
                 shallow: shallow.into(),
                 filter: filter.into(),
             };

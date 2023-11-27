@@ -393,6 +393,10 @@ pub mod clone {
         #[clap(long)]
         pub no_tags: bool,
 
+        /// Do not checkout the main worktree after cloning.
+        #[clap(long)]
+        pub no_checkout: bool,
+
         #[clap(flatten)]
         pub shallow: ShallowOptions,
 
