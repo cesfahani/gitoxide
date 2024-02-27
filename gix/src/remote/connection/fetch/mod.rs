@@ -147,6 +147,8 @@ pub mod prepare {
         MissingRefSpecs,
         #[error(transparent)]
         RefMap(#[from] crate::remote::ref_map::Error),
+        #[error(transparent)]
+        Handshake(#[from] crate::remote::connection::handshake::Error),
     }
 
     impl gix_protocol::transport::IsSpuriousError for Error {
@@ -190,6 +192,35 @@ where
         Ok(Prepare {
             con: Some(self),
             ref_map,
+            dry_run: DryRun::No,
+            reflog_message: None,
+            write_packed_refs: WritePackedRefs::Never,
+            shallow: Default::default(),
+            filter,
+        })
+    }
+
+    /// Similar to [`prepare_fetch()`][Self::prepare_fetch()], but also fetches an explicitly provided set of objects.
+    #[allow(clippy::result_large_err)]
+    #[gix_protocol::maybe_async::maybe_async]
+    pub async fn prepare_fetch_explicit(
+        mut self,
+        progress: impl Progress,
+        extra_parameters: Vec<(String, Option<String>)>,
+    ) -> Result<Prepare<'remote, 'repo, T>, prepare::Error> {
+        let outcome = self.handshake(extra_parameters, progress).await?;
+        let object_hash = crate::remote::connection::handshake::extract_object_format(self.remote.repo, &outcome)?;
+        let filter = self.remote.filter;
+        Ok(Prepare {
+            con: Some(self),
+            ref_map: RefMap {
+                mappings: Vec::new(),
+                extra_refspecs: Vec::new(),
+                fixes: Vec::new(),
+                remote_refs: Vec::new(),
+                handshake: outcome,
+                object_hash,
+            },
             dry_run: DryRun::No,
             reflog_message: None,
             write_packed_refs: WritePackedRefs::Never,

@@ -133,6 +133,21 @@ pub enum Filter {
 }
 
 
+/// Information about a fetch for explicit objects.
+#[derive(Default, Debug, Clone)]
+#[cfg(any(feature = "blocking-network-client", feature = "async-network-client"))]
+pub struct ExplicitFetch {
+    /// Additional information provided by the server as part of the handshake.
+    ///
+    /// Note that the `refs` field is always `None` as the refs are placed in `remote_refs`.
+    pub handshake: gix_protocol::handshake::Outcome,
+    /// The kind of hash used for all data sent by the server, if understood by this client implementation.
+    ///
+    /// It was extracted from the `handshake` as advertised by the server.
+    pub object_hash: gix_hash::Kind,
+}
+
+
 /// Information about the relationship between our refspecs, and remote references with their local counterparts.
 #[derive(Default, Debug, Clone)]
 #[cfg(any(feature = "blocking-network-client", feature = "async-network-client"))]

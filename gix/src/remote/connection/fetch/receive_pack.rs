@@ -14,15 +14,7 @@ use crate::{
         cache::util::ApplyLeniency,
         tree::{Clone, Fetch, Key},
     },
-    remote::{self, fetch::{Filter, BlobFilter}},
-    remote::{
-        connection::fetch::config,
-        fetch,
-        fetch::{
-            negotiate, negotiate::Algorithm, outcome, refs, Error, Outcome, Prepare, ProgressId, RefLogMessage,
-            Shallow, Status,
-        },
-    },
+    remote::{self, connection::fetch::config, fetch::{self, negotiate::{self, Algorithm}, outcome, refs, BlobFilter, Error, Filter, Outcome, Prepare, ProgressId, RefLogMessage, Shallow, Status}},
     Repository,
 };
 
@@ -372,6 +364,155 @@ where
             },
         };
         Ok(out)
+    }
+
+    ///
+    #[gix_protocol::maybe_async::maybe_async]
+    pub async fn receive_explicit<P>(
+        self,
+        mut progress: P,
+        objects: gix_hashtable::HashSet<gix_hash::ObjectId>,
+        should_interrupt: &AtomicBool
+    ) -> Result<Option<gix_pack::bundle::write::Outcome>, Error>
+    where
+        P: gix_features::progress::NestedProgress,
+        P::SubProgress: 'static,
+    {
+        self.receive_explicit_inner(&mut progress, objects, should_interrupt).await
+    }
+
+    #[gix_protocol::maybe_async::maybe_async]
+    #[allow(clippy::drop_non_drop)]
+    pub(crate) async fn receive_explicit_inner(
+        mut self,
+        progress: &mut dyn crate::DynNestedProgress,
+        objects: gix_hashtable::HashSet<gix_hash::ObjectId>,
+        should_interrupt: &AtomicBool,
+    ) -> Result<Option<gix_pack::bundle::write::Outcome>, Error> {
+        let _span = gix_trace::coarse!("fetch::Prepare::receive_explicit()");
+        let mut con = self.con.take().expect("receive() can only be called once");
+
+        let handshake = &self.ref_map.handshake;
+        let protocol_version = handshake.server_protocol_version;
+
+        let fetch = gix_protocol::Command::Fetch;
+        let repo = con.remote.repo;
+        let fetch_features = {
+            let mut f = fetch.default_features(protocol_version, &handshake.capabilities);
+            f.push(repo.config.user_agent_tuple());
+            f
+        };
+
+        gix_protocol::fetch::Response::check_required_features(protocol_version, &fetch_features)?;
+        let sideband_all = fetch_features.iter().any(|(n, _)| *n == "sideband-all");
+        let mut arguments = gix_protocol::fetch::Arguments::new(protocol_version, fetch_features, con.trace);
+
+        match &self.filter {
+            Filter::None => {},
+            Filter::Blob(b) => {
+                match b {
+                    BlobFilter::None => {
+                        arguments.filter("blob:none");
+                    },
+                    BlobFilter::Limit {
+                        size,
+                    } => {
+                        arguments.filter(&format!("blob:limit={}", size));
+                    },
+                }
+            },
+        }
+
+        if self.ref_map.object_hash != repo.object_hash() {
+            return Err(Error::IncompatibleObjectHash {
+                local: repo.object_hash(),
+                remote: self.ref_map.object_hash,
+            });
+        }
+
+        for obj in objects {
+            arguments.want(obj);
+        }
+
+        let mut write_pack_bundle = {
+            let _span = gix_trace::detail!("receive pack");
+            progress.set_name(format!("receive pack"));
+            let mut reader = arguments.send(&mut con.transport, true).await?;
+            if sideband_all {
+                setup_remote_progress(progress, &mut reader, should_interrupt);
+            }
+            gix_protocol::fetch::Response::from_line_reader(
+                protocol_version,
+                &mut reader,
+                true,
+                false,
+            ).await?;
+
+            let options = gix_pack::bundle::write::Options {
+                thread_limit: config::index_threads(repo)?,
+                index_version: config::pack_index_version(repo)?,
+                iteration_mode: gix_pack::data::input::Mode::Verify,
+                object_hash: con.remote.repo.object_hash(),
+            };
+
+            let write_pack_bundle = if matches!(self.dry_run, fetch::DryRun::No) {
+                #[cfg(not(feature = "async-network-client"))]
+                let mut rd = reader;
+                #[cfg(feature = "async-network-client")]
+                let mut rd = gix_protocol::futures_lite::io::BlockOn::new(reader);
+                let res = gix_pack::Bundle::write_to_directory(
+                    &mut rd,
+                    Some(&repo.objects.store_ref().path().join("pack")),
+                    progress,
+                    should_interrupt,
+                    Some(Box::new({
+                        let repo = repo.clone();
+                        repo.objects
+                    })),
+                    options,
+                )?;
+                // Assure the final flush packet is consumed.
+                #[cfg(feature = "async-network-client")]
+                let has_read_to_end = { rd.get_ref().stopped_at().is_some() };
+                #[cfg(not(feature = "async-network-client"))]
+                let has_read_to_end = { rd.stopped_at().is_some() };
+                if !has_read_to_end {
+                    std::io::copy(&mut rd, &mut std::io::sink()).unwrap();
+                }
+                #[cfg(feature = "async-network-client")]
+                {
+                    reader = rd.into_inner();
+                }
+
+                #[cfg(not(feature = "async-network-client"))]
+                {
+                    reader = rd;
+                }
+                Some(res)
+            } else {
+                None
+            };
+            drop(reader);
+
+            if matches!(protocol_version, gix_protocol::transport::Protocol::V2) {
+                gix_protocol::indicate_end_of_interaction(&mut con.transport, con.trace)
+                    .await
+                    .ok();
+            }
+
+            write_pack_bundle
+        };
+
+        if let Some(bundle) = write_pack_bundle.as_mut() {
+            if bundle.index.num_objects == 0 {
+                if let Some(path) = bundle.keep_path.take() {
+                    std::fs::remove_file(&path).map_err(|err| Error::RemovePackKeepFile { path, source: err })?;
+                }
+                write_pack_bundle = None
+            }
+        }
+
+        Ok(write_pack_bundle)
     }
 }
 
