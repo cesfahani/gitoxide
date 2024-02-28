@@ -1142,14 +1142,14 @@ pub fn main() -> Result<()> {
                 move |_progress, out, err| core::repository::odb::info(repository(Mode::Strict)?, format, out, err),
             ),
         },
-        Subcommands::Fsck(fsck::Platform { spec }) => prepare_and_run(
+        Subcommands::Fsck(fsck::Platform { no_walk, spec }) => prepare_and_run(
             "fsck",
             trace,
             auto_verbose,
             progress,
             progress_keep_open,
             None,
-            move |_progress, out, _err| core::repository::fsck(repository(Mode::Strict)?, spec, out),
+            move |_progress, out, _err| core::repository::fsck(repository(Mode::Strict)?, !no_walk, spec, out),
         ),
         Subcommands::Mailmap(cmd) => match cmd {
             mailmap::Subcommands::Entries => prepare_and_run(

@@ -80,9 +80,7 @@ where
             match entry_ref.mode.kind() {
                 EntryKind::Tree => {
                     let tree_id = entry_ref.oid.to_owned();
-                    if self.seen.insert(tree_id) {
-                        tree_ids.push_back(tree_id);
-                    }
+                    tree_ids.push_back(tree_id);
                 }
                 EntryKind::Blob | EntryKind::BlobExecutable | EntryKind::Link => {
                     let blob_id = entry_ref.oid.to_owned();

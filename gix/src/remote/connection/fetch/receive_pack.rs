@@ -404,7 +404,9 @@ where
         };
 
         gix_protocol::fetch::Response::check_required_features(protocol_version, &fetch_features)?;
+
         let sideband_all = fetch_features.iter().any(|(n, _)| *n == "sideband-all");
+
         let mut arguments = gix_protocol::fetch::Arguments::new(protocol_version, fetch_features, con.trace);
 
         match &self.filter {
@@ -434,19 +436,28 @@ where
             arguments.want(obj);
         }
 
+        // progress.message(MessageLevel::Info, format!("Created arguments: {arguments:?}").to_string());
+
         let mut write_pack_bundle = {
             let _span = gix_trace::detail!("receive pack");
+            progress.step();
             progress.set_name(format!("receive pack"));
             let mut reader = arguments.send(&mut con.transport, true).await?;
             if sideband_all {
                 setup_remote_progress(progress, &mut reader, should_interrupt);
             }
-            gix_protocol::fetch::Response::from_line_reader(
+
+            let response = gix_protocol::fetch::Response::from_line_reader(
                 protocol_version,
                 &mut reader,
                 true,
                 false,
             ).await?;
+
+            assert!(response.has_pack());
+            if !sideband_all {
+                setup_remote_progress(progress, &mut reader, should_interrupt);
+            }
 
             let options = gix_pack::bundle::write::Options {
                 thread_limit: config::index_threads(repo)?,
@@ -488,6 +499,7 @@ where
                 {
                     reader = rd;
                 }
+
                 Some(res)
             } else {
                 None

@@ -585,6 +585,10 @@ pub mod odb {
 pub mod fsck {
     #[derive(Debug, clap::Parser)]
     pub struct Platform {
+        /// Do not walk commit ancestors.
+        #[arg(long)]
+        pub no_walk: bool,
+
         /// A revspec to start the connectivity check from.
         pub spec: Option<String>,
     }
