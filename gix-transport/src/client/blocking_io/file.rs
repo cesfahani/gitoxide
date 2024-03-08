@@ -90,6 +90,16 @@ impl SpawnProcessOnDemand {
     }
 }
 
+impl Drop for SpawnProcessOnDemand {
+    fn drop(&mut self) {
+        if let Some(mut child) = self.child.take() {
+            child.kill().ok();
+            child.wait().ok();
+        }
+    }
+
+}
+
 impl client::TransportWithoutIO for SpawnProcessOnDemand {
     fn set_identity(&mut self, identity: gix_sec::identity::Account) -> Result<(), client::Error> {
         if self.url.scheme == gix_url::Scheme::Ssh {
